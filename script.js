@@ -35,21 +35,24 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Navbar Scroll Effect
-let lastScroll = 0;
+// Navbar Scroll Effect and Parallax
 const navbar = document.querySelector('.navbar');
+const hero = document.querySelector('.hero');
 
 window.addEventListener('scroll', () => {
-    const currentScroll = window.pageYOffset;
+    const scrolled = window.pageYOffset;
     
-    // Add shadow when scrolled
-    if (currentScroll > 0) {
+    // Add shadow to navbar when scrolled
+    if (scrolled > 0) {
         navbar.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
     } else {
         navbar.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.1)';
     }
     
-    lastScroll = currentScroll;
+    // Add parallax effect to hero section
+    if (hero) {
+        hero.style.transform = `translateY(${scrolled * 0.5}px)`;
+    }
 });
 
 // Form Submission Handler
@@ -94,13 +97,4 @@ animatedElements.forEach(el => {
     el.style.transform = 'translateY(20px)';
     el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
     observer.observe(el);
-});
-
-// Add parallax effect to hero section
-window.addEventListener('scroll', () => {
-    const hero = document.querySelector('.hero');
-    if (hero) {
-        const scrolled = window.pageYOffset;
-        hero.style.transform = `translateY(${scrolled * 0.5}px)`;
-    }
 });
