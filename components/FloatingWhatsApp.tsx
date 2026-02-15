@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle, X } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { useState } from "react";
 
 export default function FloatingWhatsApp() {
@@ -10,7 +10,7 @@ export default function FloatingWhatsApp() {
     <>
       {/* Floating Button */}
       <a
-        href="https://wa.me/221771463012"
+        href="https://wa.me/221762641751"
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 group"
@@ -29,7 +29,7 @@ export default function FloatingWhatsApp() {
           {/* Tooltip */}
           {isOpen && (
             <div className="absolute bottom-full right-0 mb-4 bg-white text-gray-900 px-4 py-3 rounded-lg shadow-xl whitespace-nowrap animate-fade-in">
-              <div className="font-semibold">Besoin d'aide ?</div>
+              <div className="font-semibold">Besoin d&apos;aide ?</div>
               <div className="text-sm text-gray-600">Discutons sur WhatsApp</div>
               <div className="absolute top-full right-6 w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-white"></div>
             </div>

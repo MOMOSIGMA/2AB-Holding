@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Menu, X, MessageCircle } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -28,7 +29,7 @@ export default function Header() {
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <a href="#" className="flex items-center group">
+          <Link href="/" className="flex items-center group">
             <Image 
               src="/Logo.png" 
               alt="2AB Holding Logo" 
@@ -37,47 +38,47 @@ export default function Header() {
               className="h-12 w-auto transition-all group-hover:scale-105"
               priority
             />
-          </a>
+          </Link>
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            <a
-              href="#services"
+            <Link
+              href="/#services"
               className={`font-semibold transition-colors ${
                 isScrolled ? "text-gray-300 hover:text-cyan-400" : "text-white hover:text-cyan-400"
               }`}
             >
               Services
-            </a>
-            <a
-              href="#portfolio"
+            </Link>
+            <Link
+              href="/#portfolio"
               className={`font-semibold transition-colors ${
                 isScrolled ? "text-gray-300 hover:text-cyan-400" : "text-white hover:text-cyan-400"
               }`}
             >
               Portfolio
-            </a>
-            <a
-              href="#process"
+            </Link>
+            <Link
+              href="/#process"
               className={`font-semibold transition-colors ${
                 isScrolled ? "text-gray-300 hover:text-cyan-400" : "text-white hover:text-cyan-400"
               }`}
             >
               Process
-            </a>
-            <a
-              href="#contact-form"
+            </Link>
+            <Link
+              href="/devis"
               className={`font-semibold transition-colors ${
                 isScrolled ? "text-gray-300 hover:text-cyan-400" : "text-white hover:text-cyan-400"
               }`}
             >
               Devis Gratuit
-            </a>
+            </Link>
             <a
-              href="https://wa.me/221771463012"
+              href="https://wa.me/221762641751"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-full font-bold shadow-lg hover:shadow-cyan-500/50 transform hover:scale-105 transition-all"
+              className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-cyan-500 text-white rounded-full font-bold shadow-lg hover:shadow-cyan-500/50 transform hover:scale-105 transition-all"
             >
               <MessageCircle className="w-5 h-5" />
               WhatsApp
@@ -102,39 +103,39 @@ export default function Header() {
         {isMobileMenuOpen && (
           <div className="md:hidden py-6 bg-black/95 backdrop-blur-xl border-t border-white/10">
             <nav className="flex flex-col gap-4">
-              <a
-                href="#services"
+              <Link
+                href="/#services"
                 className="text-gray-300 font-semibold hover:text-cyan-400 transition-colors py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Services
-              </a>
-              <a
-                href="#portfolio"
+              </Link>
+              <Link
+                href="/#portfolio"
                 className="text-gray-300 font-semibold hover:text-cyan-400 transition-colors py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Portfolio
-              </a>
-              <a
-                href="#process"
+              </Link>
+              <Link
+                href="/#process"
                 className="text-gray-300 font-semibold hover:text-cyan-400 transition-colors py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Process
-              </a>
-              <a
-                href="#contact-form"
+              </Link>
+              <Link
+                href="/devis"
                 className="text-gray-300 font-semibold hover:text-cyan-400 transition-colors py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Devis Gratuit
-              </a>
+              </Link>
               <a
-                href="https://wa.me/221771463012"
+                href="https://wa.me/221762641751"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-full font-bold shadow-lg w-fit mt-2"
+                className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-cyan-500 text-white rounded-full font-bold shadow-lg w-fit mt-2"
               >
                 <MessageCircle className="w-5 h-5" />
                 WhatsApp

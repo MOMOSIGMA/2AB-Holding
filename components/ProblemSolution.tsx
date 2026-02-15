@@ -33,7 +33,7 @@ export default function ProblemSolution() {
               </p>
               
               <a
-                href="https://wa.me/221771463012"
+                href="https://wa.me/221762641751"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-full font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300"

@@ -41,7 +41,7 @@ export default function Process() {
               <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent"> Efficace</span>
             </h2>
             <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-              De l'idée au site en ligne en 3 étapes. C'est tout.
+              De l&apos;idée au site en ligne en 3 étapes. C&apos;est tout.
             </p>
           </div>
           
@@ -93,7 +93,7 @@ export default function Process() {
                 Prêt à démarrer ? Premier échange gratuit sans engagement
               </p>
               <a
-                href="https://wa.me/221771463012"
+                href="https://wa.me/221762641751"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-10 py-5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-full font-bold text-lg shadow-2xl hover:shadow-cyan-500/50 transform hover:scale-110 transition-all duration-300 flex items-center gap-3"

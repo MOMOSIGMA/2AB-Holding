@@ -31,7 +31,11 @@ interface FormData {
   successCriteria: string;
 }
 
-export default function ContactForm() {
+interface ContactFormProps {
+  embedded?: boolean;
+}
+
+export default function ContactForm({ embedded = false }: ContactFormProps) {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     companyName: "",
@@ -110,7 +114,7 @@ ${formData.paymentMethods.length > 0 ? `• Paiements: ${formData.paymentMethods
 ${formData.successCriteria}`;
 
     const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/221771463012?text=${encodedMessage}`, '_blank');
+    window.open(`https://wa.me/221762641751?text=${encodedMessage}`, '_blank');
   };
 
   const nextStep = () => {
@@ -151,7 +155,7 @@ ${formData.successCriteria}`;
 
       <div className="grid md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-white font-semibold mb-2">Nom de l'entreprise *</label>
+          <label className="block text-white font-semibold mb-2">Nom de l&apos;entreprise *</label>
           <input
             type="text"
             name="companyName"
@@ -176,7 +180,7 @@ ${formData.successCriteria}`;
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-white font-semibold mb-2">Description de l'activité *</label>
+          <label className="block text-white font-semibold mb-2">Description de l&apos;activité *</label>
           <textarea
             name="activity"
             value={formData.activity}
@@ -367,8 +371,8 @@ ${formData.successCriteria}`;
             required
           >
             <option value="" className="bg-gray-900 text-gray-400">Sélectionnez...</option>
-            <option value="Oui, j'ai un logo" className="bg-gray-900 text-white">Oui, j'ai un logo</option>
-            <option value="Non, besoin d'un logo" className="bg-gray-900 text-white">Non, besoin d'un logo</option>
+            <option value="Oui, j'ai un logo" className="bg-gray-900 text-white">Oui, j&apos;ai un logo</option>
+            <option value="Non, besoin d'un logo" className="bg-gray-900 text-white">Non, besoin d&apos;un logo</option>
             <option value="En cours de création" className="bg-gray-900 text-white">En cours de création</option>
           </select>
         </div>
@@ -445,7 +449,7 @@ ${formData.successCriteria}`;
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-white font-semibold mb-2">👉 Qu'est-ce qui vous ferait dire que ce projet est un succès ? *</label>
+          <label className="block text-white font-semibold mb-2">👉 Qu&apos;est-ce qui vous ferait dire que ce projet est un succès ? *</label>
           <textarea
             name="successCriteria"
             value={formData.successCriteria}
@@ -460,39 +464,32 @@ ${formData.successCriteria}`;
     </div>
   );
 
-  const MotivationalBanner = ({ data }: { data: typeof motivationalMessages[0] }) => {
-    const Icon = data.icon;
-    return (
-      <div className={`mb-8 p-6 bg-gradient-to-r ${data.color} rounded-2xl text-white text-center`}>
-        <div className="flex items-center justify-center gap-3 mb-3">
-          <Icon className="w-8 h-8" />
-          <h4 className="text-2xl font-black">{data.title}</h4>
-        </div>
-        <p className="text-lg">{data.message}</p>
-      </div>
-    );
-  };
+  const currentMotivation = step > 1 ? motivationalMessages[step - 2] : null;
 
   return (
-    <section className="py-32 bg-gradient-to-br from-gray-900 to-black relative overflow-hidden" id="contact-form">
+    <section className={`${embedded ? "py-0 bg-transparent" : "py-32 bg-linear-to-br from-gray-900 to-black"} relative overflow-hidden`} id="contact-form">
       {/* Background grid */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:64px_64px]"></div>
+      {!embedded && (
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-size-[64px_64px]"></div>
+      )}
       
-      <div className="container mx-auto px-6 relative z-10">
+      <div className={`${embedded ? "relative z-10" : "container mx-auto px-6 relative z-10"}`}>
         <div className="max-w-4xl mx-auto">
           
           {/* Header */}
-          <div className="text-center mb-16">
-            <h2 className="text-5xl md:text-7xl font-black text-white mb-6">
-              Lancez votre{" "}
-              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                Projet
-              </span>
-            </h2>
-            <p className="text-xl text-gray-400">
-              3 étapes rapides pour concrétiser votre vision digitale
-            </p>
-          </div>
+          {!embedded && (
+            <div className="text-center mb-16">
+              <h2 className="text-5xl md:text-7xl font-black text-white mb-6">
+                Lancez votre{" "}
+                <span className="bg-linear-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                  Projet
+                </span>
+              </h2>
+              <p className="text-xl text-gray-400">
+                3 étapes rapides pour concrétiser votre vision digitale
+              </p>
+            </div>
+          )}
 
           {/* Progress Bar */}
           <div className="mb-12">
@@ -501,14 +498,14 @@ ${formData.successCriteria}`;
                 <div key={num} className="flex items-center">
                   <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${
                     step >= num 
-                      ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white' 
+                      ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white' 
                       : 'bg-white/10 text-gray-400'
                   }`}>
                     {step > num ? <CheckCircle className="w-6 h-6" /> : num}
                   </div>
                   {num < 3 && (
                     <div className={`w-24 md:w-32 h-1 mx-2 ${
-                      step > num ? 'bg-gradient-to-r from-blue-600 to-cyan-500' : 'bg-white/10'
+                      step > num ? 'bg-linear-to-r from-blue-600 to-cyan-500' : 'bg-white/10'
                     }`} />
                   )}
                 </div>
@@ -522,10 +519,18 @@ ${formData.successCriteria}`;
           </div>
 
           {/* Motivational Banner */}
-          {step > 1 && <MotivationalBanner data={motivationalMessages[step - 2]} />}
+          {currentMotivation && (
+            <div className={`mb-8 p-6 bg-linear-to-r ${currentMotivation.color} rounded-2xl text-white text-center`}>
+              <div className="flex items-center justify-center gap-3 mb-3">
+                <currentMotivation.icon className="w-8 h-8" />
+                <h4 className="text-2xl font-black">{currentMotivation.title}</h4>
+              </div>
+              <p className="text-lg">{currentMotivation.message}</p>
+            </div>
+          )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-12">
+          <form onSubmit={handleSubmit} className="bg-linear-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-12">
             {step === 1 && renderStep1()}
             {step === 2 && renderStep2()}
             {step === 3 && renderStep3()}
@@ -547,7 +552,7 @@ ${formData.successCriteria}`;
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="ml-auto flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-full font-bold text-lg shadow-2xl hover:shadow-cyan-500/50 transform hover:scale-105 transition-all"
+                  className="ml-auto flex items-center gap-2 px-8 py-4 bg-linear-to-r from-blue-600 to-cyan-500 text-white rounded-full font-bold text-lg shadow-2xl hover:shadow-cyan-500/50 transform hover:scale-105 transition-all"
                 >
                   Continuer
                   <ArrowRight className="w-6 h-6" />
@@ -555,7 +560,7 @@ ${formData.successCriteria}`;
               ) : (
                 <button
                   type="submit"
-                  className="ml-auto flex items-center gap-2 px-10 py-5 bg-gradient-to-r from-green-600 to-emerald-500 text-white rounded-full font-black text-xl shadow-2xl hover:shadow-green-500/50 transform hover:scale-105 transition-all"
+                  className="ml-auto flex items-center gap-2 px-10 py-5 bg-linear-to-r from-green-600 to-emerald-500 text-white rounded-full font-black text-xl shadow-2xl hover:shadow-green-500/50 transform hover:scale-105 transition-all"
                 >
                   <Trophy className="w-7 h-7" />
                   Envoyer mon projet

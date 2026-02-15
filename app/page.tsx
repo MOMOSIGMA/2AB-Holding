@@ -4,10 +4,9 @@ import ProblemSolution from "@/components/ProblemSolution";
 import Services from "@/components/Services";
 import Portfolio from "@/components/Portfolio";
 import Process from "@/components/Process";
-import ContactForm from "@/components/ContactForm";
 import CTA from "@/components/CTA";
 import Footer from "@/components/Footer";
-import FloatingWhatsApp from "@/components/FloatingWhatsApp";
+import FloatingQuoteModal from "@/components/FloatingQuoteModal";
 
 export default function Home() {
   return (
@@ -25,11 +24,10 @@ export default function Home() {
         <section id="process">
           <Process />
         </section>
-        <ContactForm />
         <CTA />
       </main>
       <Footer />
-      <FloatingWhatsApp />
+      <FloatingQuoteModal />
     </>
   );
 }

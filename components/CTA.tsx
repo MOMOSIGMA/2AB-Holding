@@ -39,7 +39,7 @@ export default function CTA() {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-8">
             <a
-              href="https://wa.me/221771463012"
+              href="https://wa.me/221762641751"
               target="_blank"
               rel="noopener noreferrer"
               className="group px-12 py-6 bg-white text-blue-600 rounded-full font-black text-xl shadow-2xl hover:shadow-white/50 transform hover:scale-110 transition-all duration-300 flex items-center gap-4"
@@ -54,7 +54,7 @@ export default function CTA() {
           <div className="flex flex-wrap items-center justify-center gap-12 pt-12 text-white/80 text-lg">
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-              <span>Réponse en moins d'1h</span>
+              <span>Réponse en moins d&apos;1h</span>
             </div>
             <div>🇸🇳 Dakar, Sénégal</div>
             <div>⚡ Livraison rapide</div>
