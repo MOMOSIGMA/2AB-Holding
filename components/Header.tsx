@@ -30,7 +30,7 @@ export default function Header() {
           {/* Logo */}
           <a href="#" className="flex items-center group">
             <Image 
-              src="/logo.png" 
+              src="/Logo.png" 
               alt="2AB Holding Logo" 
               width={180} 
               height={60}
