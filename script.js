@@ -38,8 +38,9 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 // Navbar Scroll Effect and Parallax
 const navbar = document.querySelector('.navbar');
 const hero = document.querySelector('.hero');
+let ticking = false;
 
-window.addEventListener('scroll', () => {
+function updateScrollEffects() {
     const scrolled = window.pageYOffset;
     
     // Add shadow to navbar when scrolled
@@ -52,6 +53,15 @@ window.addEventListener('scroll', () => {
     // Add parallax effect to hero section
     if (hero) {
         hero.style.transform = `translateY(${scrolled * 0.5}px)`;
+    }
+    
+    ticking = false;
+}
+
+window.addEventListener('scroll', () => {
+    if (!ticking) {
+        window.requestAnimationFrame(updateScrollEffects);
+        ticking = true;
     }
 });
 
