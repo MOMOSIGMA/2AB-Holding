@@ -47,24 +47,20 @@ const projects = [
 
 export default function Portfolio() {
   return (
-    <section className="py-32 bg-black relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:64px_64px]"></div>
-      
+    <section className="py-32 bg-[#0f141b] relative overflow-hidden">
+      <div className="absolute inset-0 grain-overlay opacity-20"></div>
+
       <div className="container mx-auto px-6 relative z-10">
         <div className="max-w-7xl mx-auto">
           {/* Section Header */}
           <div className="text-center mb-20 space-y-6">
-            <div className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600/10 border border-blue-500/20 rounded-full backdrop-blur-sm mb-4">
+            <div className="inline-flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/15 rounded-full backdrop-blur-sm mb-4">
               <Globe className="w-5 h-5 text-blue-400" />
-              <span className="text-blue-400 font-semibold">Projets en Production</span>
+              <span className="text-blue-200 font-semibold">Projets en Production</span>
             </div>
             
             <h2 className="text-5xl md:text-7xl font-black text-white">
-              Réalisations{" "}
-              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                Concrètes
-              </span>
+              Réalisations Concrètes
             </h2>
             
             <p className="text-xl text-gray-400 max-w-3xl mx-auto">
@@ -80,28 +76,28 @@ export default function Portfolio() {
                 href={project.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl overflow-hidden border border-gray-700 hover:border-cyan-500/50 transform hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/20 transition-all duration-500"
+                className="group relative bg-white/5 rounded-3xl overflow-hidden border border-white/10 hover:border-white/30 transition-all duration-300"
                 style={{ 
                   animationDelay: `${index * 0.1}s`,
                 }}
               >
                 {/* Gradient overlay */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${project.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}></div>
+                <div className="absolute inset-0 bg-linear-to-b from-transparent to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 
                 {/* Content */}
                 <div className="relative p-8 space-y-6">
                   {/* Icon/Category Badge */}
                   <div className="flex items-center justify-between">
-                    <span className={`px-4 py-2 bg-gradient-to-r ${project.color} text-white text-sm font-bold rounded-full shadow-lg`}>
+                    <span className={`px-4 py-2 bg-linear-to-r ${project.color} text-white text-sm font-bold rounded-full shadow-lg`}>
                       {project.category}
                     </span>
-                    <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center group-hover:bg-white/10 transition-colors">
-                      <ExternalLink className="w-6 h-6 text-gray-400 group-hover:text-cyan-400 transition-colors" />
+                    <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                      <ExternalLink className="w-6 h-6 text-gray-300 group-hover:text-white transition-colors" />
                     </div>
                   </div>
                   
                   {/* Title */}
-                  <h3 className="text-3xl font-bold text-white group-hover:text-cyan-400 transition-colors">
+                  <h3 className="text-3xl font-bold text-white transition-colors">
                     {project.title}
                   </h3>
                   
@@ -123,15 +119,10 @@ export default function Portfolio() {
                   </div>
                   
                   {/* Visit Link */}
-                  <div className="pt-4 flex items-center gap-2 text-cyan-400 font-semibold group-hover:gap-4 transition-all">
+                  <div className="pt-4 flex items-center gap-2 text-blue-200 font-semibold group-hover:gap-4 transition-all">
                     <span>Visiter le site</span>
                     <ArrowRight className="w-5 h-5" />
                   </div>
-                </div>
-                
-                {/* Animated border effect */}
-                <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                  <div className={`absolute inset-0 rounded-3xl bg-gradient-to-r ${project.color} opacity-20 blur-xl`}></div>
                 </div>
               </a>
             ))}
@@ -139,13 +130,13 @@ export default function Portfolio() {
           
           {/* CTA */}
           <div className="text-center mt-20">
-            <div className="inline-flex flex-col items-center gap-6 p-12 bg-gradient-to-br from-blue-600/10 to-purple-600/10 border border-blue-500/20 rounded-3xl backdrop-blur-sm">
+            <div className="inline-flex flex-col items-center gap-6 p-12 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-sm">
               <p className="text-2xl text-gray-300 font-light">
                 Votre projet pourrait être le prochain sur cette liste
               </p>
               <a
                 href="https://wa.me/221762641751"
-                className="group px-10 py-5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-full font-bold text-lg shadow-2xl hover:shadow-cyan-500/50 transform hover:scale-110 transition-all duration-300 flex items-center gap-3"
+                className="group px-10 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold text-lg transition-all duration-300 flex items-center gap-3"
               >
                 Discutons de votre vision
                 <ExternalLink className="w-5 h-5 group-hover:rotate-45 transition-transform" />

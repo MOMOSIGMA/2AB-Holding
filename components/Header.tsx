@@ -22,7 +22,7 @@ export default function Header() {
     <header
       className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
         isScrolled
-          ? "bg-black/95 backdrop-blur-xl shadow-2xl border-b border-white/10"
+          ? "bg-white/95 backdrop-blur-xl border-b border-gray-200/80"
           : "bg-transparent"
       }`}
     >
@@ -45,7 +45,7 @@ export default function Header() {
             <Link
               href="/#services"
               className={`font-semibold transition-colors ${
-                isScrolled ? "text-gray-300 hover:text-cyan-400" : "text-white hover:text-cyan-400"
+                isScrolled ? "text-gray-700 hover:text-blue-700" : "text-white/90 hover:text-white"
               }`}
             >
               Services
@@ -53,7 +53,7 @@ export default function Header() {
             <Link
               href="/#portfolio"
               className={`font-semibold transition-colors ${
-                isScrolled ? "text-gray-300 hover:text-cyan-400" : "text-white hover:text-cyan-400"
+                isScrolled ? "text-gray-700 hover:text-blue-700" : "text-white/90 hover:text-white"
               }`}
             >
               Portfolio
@@ -61,7 +61,7 @@ export default function Header() {
             <Link
               href="/#process"
               className={`font-semibold transition-colors ${
-                isScrolled ? "text-gray-300 hover:text-cyan-400" : "text-white hover:text-cyan-400"
+                isScrolled ? "text-gray-700 hover:text-blue-700" : "text-white/90 hover:text-white"
               }`}
             >
               Process
@@ -69,7 +69,7 @@ export default function Header() {
             <Link
               href="/devis"
               className={`font-semibold transition-colors ${
-                isScrolled ? "text-gray-300 hover:text-cyan-400" : "text-white hover:text-cyan-400"
+                isScrolled ? "text-gray-700 hover:text-blue-700" : "text-white/90 hover:text-white"
               }`}
             >
               Devis Gratuit
@@ -78,9 +78,9 @@ export default function Header() {
               href="https://wa.me/221762641751"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-cyan-500 text-white rounded-full font-bold shadow-lg hover:shadow-cyan-500/50 transform hover:scale-105 transition-all"
+              className="flex items-center gap-2 px-5 py-2.5 bg-gray-950 text-white rounded-full font-semibold hover:bg-blue-700"
             >
-              <MessageCircle className="w-5 h-5" />
+              <MessageCircle className="w-4 h-4" />
               WhatsApp
             </a>
           </nav>
@@ -88,45 +88,50 @@ export default function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 text-white"
+            className={`md:hidden inline-flex items-center gap-2 px-3 py-2 rounded-full border ${
+              isScrolled
+                ? "border-gray-300 text-gray-900 bg-white"
+                : "border-white/30 text-white bg-white/10 backdrop-blur"
+            }`}
             aria-label="Toggle menu"
           >
+            <span className="text-sm font-semibold">Menu</span>
             {isMobileMenuOpen ? (
-              <X className="w-7 h-7" />
+              <X className="w-5 h-5" />
             ) : (
-              <Menu className="w-7 h-7" />
+              <Menu className="w-5 h-5" />
             )}
           </button>
         </div>
         
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden py-6 bg-black/95 backdrop-blur-xl border-t border-white/10">
+          <div className="md:hidden py-6 bg-white/95 backdrop-blur-xl border-t border-gray-200">
             <nav className="flex flex-col gap-4">
               <Link
                 href="/#services"
-                className="text-gray-300 font-semibold hover:text-cyan-400 transition-colors py-2"
+                className="text-gray-700 font-semibold hover:text-blue-700 transition-colors py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Services
               </Link>
               <Link
                 href="/#portfolio"
-                className="text-gray-300 font-semibold hover:text-cyan-400 transition-colors py-2"
+                className="text-gray-700 font-semibold hover:text-blue-700 transition-colors py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Portfolio
               </Link>
               <Link
                 href="/#process"
-                className="text-gray-300 font-semibold hover:text-cyan-400 transition-colors py-2"
+                className="text-gray-700 font-semibold hover:text-blue-700 transition-colors py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Process
               </Link>
               <Link
                 href="/devis"
-                className="text-gray-300 font-semibold hover:text-cyan-400 transition-colors py-2"
+                className="text-gray-700 font-semibold hover:text-blue-700 transition-colors py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Devis Gratuit
@@ -135,9 +140,9 @@ export default function Header() {
                 href="https://wa.me/221762641751"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-cyan-500 text-white rounded-full font-bold shadow-lg w-fit mt-2"
+                className="flex items-center gap-2 px-5 py-3 bg-gray-950 text-white rounded-full font-semibold w-fit mt-2"
               >
-                <MessageCircle className="w-5 h-5" />
+                <MessageCircle className="w-4 h-4" />
                 WhatsApp
               </a>
             </nav>
