@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 
 interface ContactFormProps {
@@ -125,6 +125,7 @@ const getSavedSnapshot = () => {
 export default function ContactForm({ embedded = false }: ContactFormProps) {
   const [savedSnapshot] = useState(getSavedSnapshot);
   const [step, setStep] = useState<Step>(savedSnapshot.step);
+  const formRef = useRef<HTMLFormElement>(null);
   const [formData, setFormData] = useState<FormData>(savedSnapshot.data);
   const [errors, setErrors] = useState<string[]>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -297,8 +298,15 @@ export default function ContactForm({ embedded = false }: ContactFormProps) {
   function goNext() {
     const stepErrors = validateStep(step);
     setErrors(stepErrors);
-    if (stepErrors.length > 0 || step === TOTAL_STEPS) return;
-    setStep((step + 1) as Step);
+    if (stepErrors.length > 0) return;
+    if (step < TOTAL_STEPS) {
+      setStep((step + 1) as Step);
+      setTimeout(() => {
+        if (formRef.current) {
+          formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
   }
   function goPrev() {
     setErrors([]);
@@ -314,18 +322,16 @@ export default function ContactForm({ embedded = false }: ContactFormProps) {
           <div className="mb-8 flex justify-between text-sm text-gray-400">{sectionLabels.map((label, i) => <span key={label} className={i + 1 <= step ? "text-white" : ""}>{label}</span>)}</div>
           {restored && <div className="mb-4 p-3 rounded-lg bg-cyan-900/30 border border-cyan-600/30 text-cyan-200">Brouillon restauré automatiquement. Expiration du brouillon: 24h.</div>}
           <form
+            ref={formRef}
             onSubmit={e => {
               e.preventDefault();
               // Validation toutes étapes
               const allErrors = ([1,2,3,4,5] as Step[]).flatMap(s => validateStep(s));
-              if (allErrors.length > 0) {
-                setErrors(validateStep(step));
-                return;
-              }
-              // Score sérieux
+              setErrors(allErrors);
+              if (allErrors.length > 0) return;
+              // Message WhatsApp ASCII
               const score = seriousnessScore();
               const seriousness = seriousnessLabel(score);
-              // Message WhatsApp ASCII
               const message = buildAsciiMessage(formData, score, seriousness);
               window.open(`https://wa.me/221762641751?text=${encodeURIComponent(message)}`, "_blank");
               setIsSubmitted(true);
@@ -334,103 +340,118 @@ export default function ContactForm({ embedded = false }: ContactFormProps) {
             }}
             className="bg-linear-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-10 space-y-6"
           >
-            {/* SECTION 1 */}
+                        {step === 2 && (
+                          <>
+                            <h3 className="text-base font-semibold text-cyan-200 mb-2">Situation digitale</h3>
+                            <select className="w-full px-4 py-3 bg-gray-900/90 border border-white/20 rounded-lg text-white focus:border-cyan-400 focus:outline-none" name="businessAge" value={formData.businessAge} onChange={onChange}>
+                              <option value="">Depuis combien de temps votre business existe ? *</option>
+                              <option value="Moins de 6 mois">Moins de 6 mois</option>
+                              <option value="6 mois – 1 an">6 mois – 1 an</option>
+                              <option value="1 – 3 ans">1 – 3 ans</option>
+                              <option value="3 ans +">3 ans +</option>
+                            </select>
+                            <div className="grid md:grid-cols-2 gap-3">
+                              {digitalOptions.map((item) => (
+                                <label key={item} className="flex items-center gap-3 px-4 py-3 bg-white/10 border border-white/20 rounded-lg cursor-pointer hover:border-cyan-400">
+                                  <input type="checkbox" checked={formData.digitalPresence.includes(item)} onChange={() => onDigitalToggle(item)} className="w-5 h-5" />
+                                  <span className="text-white">{item}</span>
+                                </label>
+                              ))}
+                            </div>
+                            <input className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="monthlyClients" value={formData.monthlyClients} onChange={onChange} placeholder="Ex : 50 clients" />
+                            <select className="w-full px-4 py-3 bg-gray-900/90 border border-white/20 rounded-lg text-white focus:border-cyan-400 focus:outline-none" name="advertisingNow" value={formData.advertisingNow} onChange={onChange}>
+                              <option value="">Faites-vous actuellement de la publicité ? *</option>
+                              <option value="Oui">Oui</option>
+                              <option value="Non">Non</option>
+                            </select>
+                          </>
+                        )}
             {step === 1 && <>
-              <h3 className="text-base font-semibold text-cyan-200 mb-2">Informations générales</h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="fullName" className="text-xs text-cyan-100/80 pl-1">Nom complet *</label>
-                  <input id="fullName" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="fullName" value={formData.fullName} onChange={onChange} placeholder="Ex : Mohamed Bathily" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="companyName" className="text-xs text-cyan-100/80 pl-1">Nom de l'entreprise *</label>
-                  <input id="companyName" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="companyName" value={formData.companyName} onChange={onChange} placeholder="Ex : Autoboss" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="slogan" className="text-xs text-cyan-100/80 pl-1">Slogan (optionnel)</label>
-                  <input id="slogan" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="slogan" value={formData.slogan} onChange={onChange} placeholder="Ex : Votre mobilité, notre passion" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="whatsapp" className="text-xs text-cyan-100/80 pl-1">Numéro WhatsApp *</label>
-                  <input id="whatsapp" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="whatsapp" value={formData.whatsapp} onChange={onChange} placeholder="Ex : 771234567" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="phone" className="text-xs text-cyan-100/80 pl-1">Téléphone *</label>
-                  <input id="phone" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="phone" value={formData.phone} onChange={onChange} placeholder="Ex : 771234567" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="email" className="text-xs text-cyan-100/80 pl-1">Email *</label>
-                  <input id="email" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="email" value={formData.email} onChange={onChange} placeholder="Ex : contact@autoboss.com" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="cityCountry" className="text-xs text-cyan-100/80 pl-1">Ville, Pays *</label>
-                  <input id="cityCountry" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="cityCountry" value={formData.cityCountry} onChange={onChange} placeholder="Ex : Dakar, Sénégal" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="sector" className="text-xs text-cyan-100/80 pl-1">Secteur d'activité *</label>
-                  <input id="sector" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="sector" value={formData.sector} onChange={onChange} placeholder="Ex : Automobile, Immobilier, Restauration..." />
-                </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="fullName" className="text-xs text-cyan-100/80 pl-1">Nom complet *</label>
+                <input id="fullName" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="fullName" value={formData.fullName} onChange={onChange} placeholder="Ex : Mohamed Bathily" />
               </div>
-            </>}
-            {/* SECTION 2 */}
-            {step === 2 && <>
-              <h3 className="text-base font-semibold text-cyan-200 mb-2">Situation digitale</h3>
-              <select className="w-full px-4 py-3 bg-gray-900/90 border border-white/20 rounded-lg text-white focus:border-cyan-400 focus:outline-none" name="businessAge" value={formData.businessAge} onChange={onChange}>
-                <option value="">Depuis combien de temps votre business existe ? *</option>
-                <option value="Moins de 6 mois">Moins de 6 mois</option>
-                <option value="6 mois – 1 an">6 mois – 1 an</option>
-                <option value="1 – 3 ans">1 – 3 ans</option>
-                <option value="3 ans +">3 ans +</option>
-              </select>
-              <div className="grid md:grid-cols-2 gap-3">
-                {digitalOptions.map((item) => (
-                  <label key={item} className="flex items-center gap-3 px-4 py-3 bg-white/10 border border-white/20 rounded-lg cursor-pointer hover:border-cyan-400">
-                    <input type="checkbox" checked={formData.digitalPresence.includes(item)} onChange={() => onDigitalToggle(item)} className="w-5 h-5" />
-                    <span className="text-white">{item}</span>
-                  </label>
-                ))}
+              <div className="flex flex-col gap-1">
+                <label htmlFor="companyName" className="text-xs text-cyan-100/80 pl-1">Nom de l'entreprise *</label>
+                <input id="companyName" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="companyName" value={formData.companyName} onChange={onChange} placeholder="Ex : Autoboss" />
               </div>
-              <input className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="monthlyClients" value={formData.monthlyClients} onChange={onChange} placeholder="Ex : 50 clients" />
-              <select className="w-full px-4 py-3 bg-gray-900/90 border border-white/20 rounded-lg text-white focus:border-cyan-400 focus:outline-none" name="advertisingNow" value={formData.advertisingNow} onChange={onChange}>
-                <option value="">Faites-vous actuellement de la publicité ? *</option>
-                <option value="Oui">Oui</option>
-                <option value="Non">Non</option>
-              </select>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="slogan" className="text-xs text-cyan-100/80 pl-1">Slogan (optionnel)</label>
+                <input id="slogan" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="slogan" value={formData.slogan} onChange={onChange} placeholder="Ex : Votre mobilité, notre passion" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="whatsapp" className="text-xs text-cyan-100/80 pl-1">Numéro WhatsApp *</label>
+                <input id="whatsapp" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="whatsapp" value={formData.whatsapp} onChange={onChange} placeholder="Ex : 771234567" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="phone" className="text-xs text-cyan-100/80 pl-1">Téléphone *</label>
+                <input id="phone" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="phone" value={formData.phone} onChange={onChange} placeholder="Ex : 771234567" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="email" className="text-xs text-cyan-100/80 pl-1">Email *</label>
+                <input id="email" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="email" value={formData.email} onChange={onChange} placeholder="Ex : contact@autoboss.com" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="cityCountry" className="text-xs text-cyan-100/80 pl-1">Ville, Pays *</label>
+                <input id="cityCountry" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="cityCountry" value={formData.cityCountry} onChange={onChange} placeholder="Ex : Dakar, Sénégal" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="sector" className="text-xs text-cyan-100/80 pl-1">Secteur d'activité *</label>
+                <input id="sector" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="sector" value={formData.sector} onChange={onChange} placeholder="Ex : Automobile, Immobilier, Restauration..." />
+              </div>
             </>}
             {/* SECTION 3 */}
             {step === 3 && <>
               <h3 className="text-base font-semibold text-cyan-200 mb-2">Objectifs & projet</h3>
               <div className="mb-2 text-xs text-cyan-100/80">Sélectionnez un ou plusieurs objectifs pour votre projet (ex : visibilité, automatisation, ventes...)</div>
-              <div className="grid md:grid-cols-2 gap-3">
-                {objectiveOptions.map((item) => (
-                  <label key={item} className="flex items-center gap-3 px-4 py-3 bg-white/10 border border-white/20 rounded-lg cursor-pointer hover:border-cyan-400">
-                    <input type="checkbox" checked={formData.objective.includes(item)} onChange={() => onObjectiveToggle(item)} className="w-5 h-5" />
-                    <span className="text-white">{item}</span>
-                  </label>
-                ))}
-              </div>
-              <div className="text-xs text-gray-400 mb-2">Vous pouvez cocher plusieurs objectifs.</div>
-              <div className="grid md:grid-cols-2 gap-3">
-                {siteTypeOptions.map((item) => (
-                  <label key={item} className="flex items-center gap-3 px-4 py-3 bg-white/10 border border-white/20 rounded-lg cursor-pointer hover:border-cyan-400">
-                    <input type="checkbox" checked={formData.siteType.includes(item)} onChange={() => onSiteTypeToggle(item)} className="w-5 h-5" />
-                    <span className="text-white">{item}</span>
-                  </label>
-                ))}
-              </div>
-              {formData.siteType.includes("E-commerce") && <>
-                <input className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="productsCount" value={formData.productsCount} onChange={onChange} placeholder="Ex : 50 produits" />
+              <div className="flex flex-col gap-1 mb-2">
+                <label className="text-xs text-cyan-100/80 pl-1">Objectifs *</label>
                 <div className="grid md:grid-cols-2 gap-3">
-                  {paymentOptions.map((item) => (
-                    <label key={item} className="flex items-center gap-3 px-4 py-3 bg-white/10 border border-white/20 rounded-lg cursor-pointer hover:border-cyan-400">
-                      <input type="checkbox" checked={formData.paymentMethods.includes(item)} onChange={() => onPaymentToggle(item)} className="w-5 h-5" />
+                  {objectiveOptions.map((item) => (
+                    <label key={item} className={`flex items-center gap-3 px-4 py-3 bg-white/10 border rounded-lg cursor-pointer hover:border-cyan-400 ${errors.some(e=>e.toLowerCase().includes('objectifs')) ? 'border-red-500' : 'border-white/20'}`}>
+                      <input type="checkbox" checked={formData.objective.includes(item)} onChange={() => onObjectiveToggle(item)} className="w-5 h-5" />
                       <span className="text-white">{item}</span>
                     </label>
                   ))}
                 </div>
+              </div>
+              <div className="text-xs text-gray-400 mb-2">Vous pouvez cocher plusieurs objectifs.</div>
+              <div className="flex flex-col gap-1 mb-2">
+                <label className="text-xs text-cyan-100/80 pl-1">Type de site *</label>
+                <div className="grid md:grid-cols-2 gap-3">
+                  {siteTypeOptions.map((item) => (
+                    <label key={item} className={`flex items-center gap-3 px-4 py-3 bg-white/10 border rounded-lg cursor-pointer hover:border-cyan-400 ${errors.some(e=>e.toLowerCase().includes('type de site')) ? 'border-red-500' : 'border-white/20'}`}>
+                      <input type="checkbox" checked={formData.siteType.includes(item)} onChange={() => onSiteTypeToggle(item)} className="w-5 h-5" />
+                      <span className="text-white">{item}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              {formData.siteType.includes("E-commerce") && <>
+                <div className="flex flex-col gap-1 mb-2">
+                  <label htmlFor="productsCount" className="text-xs text-cyan-100/80 pl-1">Nombre de produits *</label>
+                  <input id="productsCount" className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none ${errors.some(e=>e.toLowerCase().includes('produits')) ? 'border-red-500' : 'border-white/20'}`} name="productsCount" value={formData.productsCount} onChange={onChange} placeholder="Ex : 50 produits" />
+                </div>
+                <div className="flex flex-col gap-1 mb-2">
+                  <label className="text-xs text-cyan-100/80 pl-1">Méthodes de paiement *</label>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    {paymentOptions.map((item) => (
+                      <label key={item} className={`flex items-center gap-3 px-4 py-3 bg-white/10 border rounded-lg cursor-pointer hover:border-cyan-400 ${errors.some(e=>e.toLowerCase().includes('paiement')) ? 'border-red-500' : 'border-white/20'}`}>
+                        <input type="checkbox" checked={formData.paymentMethods.includes(item)} onChange={() => onPaymentToggle(item)} className="w-5 h-5" />
+                        <span className="text-white">{item}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
               </>}
-              <textarea className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="biggestProblem" value={formData.biggestProblem} onChange={onChange} rows={3} placeholder="Ex : manque de visibilité, peu de clients..." />
-              <textarea className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="sixMonthsVision" value={formData.sixMonthsVision} onChange={onChange} rows={3} placeholder="Ex : doubler mon chiffre d'affaires, lancer un nouveau service..." />
+              <div className="flex flex-col gap-1 mb-2">
+                <label htmlFor="biggestProblem" className="text-xs text-cyan-100/80 pl-1">Problème principal *</label>
+                <textarea id="biggestProblem" className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none ${errors.some(e=>e.toLowerCase().includes('problème principal')) ? 'border-red-500' : 'border-white/20'}`} name="biggestProblem" value={formData.biggestProblem} onChange={onChange} rows={3} placeholder="Ex : manque de visibilité, peu de clients..." />
+              </div>
+              <div className="flex flex-col gap-1 mb-2">
+                <label htmlFor="sixMonthsVision" className="text-xs text-cyan-100/80 pl-1">Vision à 6 mois *</label>
+                <textarea id="sixMonthsVision" className={`w-full px-4 py-3 bg-white/10 border rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none ${errors.some(e=>e.toLowerCase().includes('vision à 6 mois')) ? 'border-red-500' : 'border-white/20'}`} name="sixMonthsVision" value={formData.sixMonthsVision} onChange={onChange} rows={3} placeholder="Ex : doubler mon chiffre d'affaires, lancer un nouveau service..." />
+              </div>
             </>}
             {/* SECTION 4 */}
             {step === 4 && <>
