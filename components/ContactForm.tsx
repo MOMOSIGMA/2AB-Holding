@@ -1,574 +1,504 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowRight, ArrowLeft, CheckCircle, Sparkles, Zap, Trophy } from "lucide-react";
-
-interface FormData {
-  // Étape 1 - Infos entreprise
-  companyName: string;
-  slogan: string;
-  activity: string;
-  yearCreated: string;
-  location: string;
-  phone: string;
-  email: string;
-  whatsapp: string;
-  
-  // Étape 2 - Détails projet
-  objective: string[];
-  mainGoal: string;
-  siteType: string[];
-  productsCount: string;
-  paymentMethods: string[];
-  
-  // Étape 3 - Design & Budget
-  hasLogo: string;
-  preferredColors: string;
-  inspirationSites: string;
-  style: string;
-  budget: string;
-  deadline: string;
-  successCriteria: string;
-}
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 
 interface ContactFormProps {
   embedded?: boolean;
 }
 
-export default function ContactForm({ embedded = false }: ContactFormProps) {
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState<FormData>({
-    companyName: "",
-    slogan: "",
-    activity: "",
-    yearCreated: "",
-    location: "",
-    phone: "",
-    email: "",
-    whatsapp: "",
-    objective: [],
-    mainGoal: "",
-    siteType: [],
-    productsCount: "",
-    paymentMethods: [],
-    hasLogo: "",
-    preferredColors: "",
-    inspirationSites: "",
-    style: "",
-    budget: "",
-    deadline: "",
-    successCriteria: "",
-  });
+type Step = 1 | 2 | 3 | 4 | 5;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+type FormData = {
+  // Section 1: Infos générales
+  fullName: string;
+  companyName: string;
+  slogan: string;
+  whatsapp: string;
+  phone: string;
+  email: string;
+  cityCountry: string;
+  sector: string;
+
+  // Section 2: Situation digitale
+  businessAge: string;
+  digitalPresence: string[];
+  monthlyClients: string;
+  advertisingNow: string;
+
+  // Section 3: Objectifs & projet
+  objective: string[];
+  siteType: string[];
+  productsCount: string;
+  paymentMethods: string[];
+  biggestProblem: string;
+  sixMonthsVision: string;
+
+  // Section 4: Design & budget
+  hasLogo: string;
+  preferredColors: string;
+  inspirationSites: string;
+  style: string;
+  budgetRange: string;
+  adInvestmentReady: string;
+  startWhen: string;
+  deadline: string;
+
+  // Section 5: Questions spécifiques
+  projectDetails: string;
+  competitors: string;
+  differentiation: string;
+  successCriteria: string;
+};
+
+type SavedPayload = {
+  data: FormData;
+  step: Step;
+  expiresAt: number;
+};
+
+const TOTAL_STEPS = 5;
+const STORAGE_KEY = "2ab_quote_form_v4";
+const SESSION_TTL_MS = 1000 * 60 * 60 * 24;
+
+const initialData: FormData = {
+  fullName: "",
+  companyName: "",
+  slogan: "",
+  whatsapp: "",
+  phone: "",
+  email: "",
+  cityCountry: "",
+  sector: "",
+  businessAge: "",
+  digitalPresence: [],
+  monthlyClients: "",
+  advertisingNow: "",
+  objective: [],
+  siteType: [],
+  productsCount: "",
+  paymentMethods: [],
+  biggestProblem: "",
+  sixMonthsVision: "",
+  hasLogo: "",
+  preferredColors: "",
+  inspirationSites: "",
+  style: "",
+  budgetRange: "",
+  adInvestmentReady: "",
+  startWhen: "",
+  deadline: "",
+  projectDetails: "",
+  competitors: "",
+  differentiation: "",
+  successCriteria: "",
+};
+
+const sectionLabels = ["Général", "Situation", "Objectifs", "Design & Budget", "Projet"];
+const objectiveOptions = ["Plus de visibilité", "Plus de ventes", "Améliorer l'image", "Lancer un nouveau produit", "Créer un site", "Automatiser"];
+const digitalOptions = ["Page Facebook", "Instagram", "TikTok", "Site web", "Fiche Google Business", "Aucun"];
+const siteTypeOptions = ["Site vitrine", "E-commerce", "Blog", "Application web", "Application Android", "Landing page"];
+const paymentOptions = ["Wave", "Orange Money", "Carte bancaire", "Paiement à la livraison"];
+const styleOptions = ["Moderne", "Minimaliste", "Luxe", "Corporate", "Dynamique"];
+const budgetOptions = ["Moins de 50 000 FCFA", "50 000 – 150 000 FCFA", "150 000 – 500 000 FCFA", "500 000 FCFA +", "À discuter"];
+
+const getSavedSnapshot = () => {
+  if (typeof window === "undefined") {
+    return { data: initialData, step: 1 as Step, restored: false };
+  }
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+  if (!raw) return { data: initialData, step: 1 as Step, restored: false };
+  try {
+    const saved = JSON.parse(raw) as SavedPayload;
+    if (saved.expiresAt <= Date.now()) {
+      window.localStorage.removeItem(STORAGE_KEY);
+      return { data: initialData, step: 1 as Step, restored: false };
+    }
+    const safeStep = saved.step >= 1 && saved.step <= TOTAL_STEPS ? saved.step : 1;
+    return { data: saved.data, step: safeStep as Step, restored: true };
+  } catch {
+    window.localStorage.removeItem(STORAGE_KEY);
+    return { data: initialData, step: 1 as Step, restored: false };
+  }
+};
+
+export default function ContactForm({ embedded = false }: ContactFormProps) {
+  const [savedSnapshot] = useState(getSavedSnapshot);
+  const [step, setStep] = useState<Step>(savedSnapshot.step);
+  const [formData, setFormData] = useState<FormData>(savedSnapshot.data);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [restored, setRestored] = useState(savedSnapshot.restored);
+
+  const isDirty = useMemo(() => JSON.stringify(formData) !== JSON.stringify(initialData), [formData]);
+
+  useEffect(() => {
+    if (isSubmitted || typeof window === "undefined") return;
+    const payload: SavedPayload = { data: formData, step, expiresAt: Date.now() + SESSION_TTL_MS };
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  }, [formData, step, isSubmitted]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || isSubmitted) return;
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!isDirty) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [isDirty, isSubmitted]);
+
+  // Génération du message WhatsApp compatible ASCII
+  function buildAsciiMessage(formData: FormData, score: number, seriousness: string) {
+    return [
+      '🚀 *NOUVEAU LEAD - FORMULAIRE PRO*',
+      '',
+      '╭───────────── GENERAL',
+      '• Nom : ' + formData.fullName,
+      '• Entreprise : ' + formData.companyName,
+      '• Slogan : ' + formData.slogan,
+      '• WhatsApp : ' + formData.whatsapp,
+      '• Téléphone : ' + formData.phone,
+      '• Email : ' + formData.email,
+      '• Ville/Pays : ' + formData.cityCountry,
+      '• Secteur : ' + formData.sector,
+      '',
+      '╭───────────── SITUATION',
+      '• Ancienneté : ' + formData.businessAge,
+      '• Présence digitale : ' + formData.digitalPresence.join(', '),
+      '• Clients/mois : ' + formData.monthlyClients,
+      '• Publicité actuelle : ' + formData.advertisingNow,
+      '',
+      '╭───────────── OBJECTIFS & PROJET',
+      '• Objectifs : ' + formData.objective.join(', '),
+      '• Type de site : ' + formData.siteType.join(', '),
+      (formData.productsCount ? '• Nombre de produits : ' + formData.productsCount : ''),
+      (formData.paymentMethods.length > 0 ? '• Paiements : ' + formData.paymentMethods.join(', ') : ''),
+      '• Problème principal : ' + formData.biggestProblem,
+      '• Vision 6 mois : ' + formData.sixMonthsVision,
+      '',
+      '╭───────────── DESIGN & BUDGET',
+      '• Logo : ' + formData.hasLogo,
+      '• Couleurs : ' + formData.preferredColors,
+      '• Sites inspiration : ' + formData.inspirationSites,
+      '• Style : ' + formData.style,
+      '• Budget : ' + formData.budgetRange,
+      '• Prêt à investir pub : ' + formData.adInvestmentReady,
+      '• Démarrage : ' + formData.startWhen,
+      '• Date livraison : ' + formData.deadline,
+      '',
+      '╭───────────── PROJET',
+      '• Description : ' + formData.projectDetails,
+      '• Concurrents : ' + formData.competitors,
+      '• Différenciation : ' + formData.differentiation,
+      '• Critère de succès : ' + formData.successCriteria,
+      '',
+      '╭───────────── QUALIFICATION',
+      '• Score : ' + score + '/10',
+      '• Niveau : ' + seriousness
+    ].filter(Boolean).join('\n');
+  }
+
+  // Handlers pour les champs du formulaire fusionné
+  function onChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleCheckboxChange = (name: keyof FormData, value: string) => {
+  }
+  function onObjectiveToggle(value: string) {
     setFormData(prev => {
-      const currentArray = prev[name] as string[];
-      const newArray = currentArray.includes(value)
-        ? currentArray.filter(item => item !== value)
-        : [...currentArray, value];
-      return { ...prev, [name]: newArray };
+      const arr = prev.objective.includes(value)
+        ? prev.objective.filter(v => v !== value)
+        : [...prev.objective, value];
+      return { ...prev, objective: arr };
     });
-  };
+  }
+  function onSiteTypeToggle(value: string) {
+    setFormData(prev => {
+      const arr = prev.siteType.includes(value)
+        ? prev.siteType.filter(v => v !== value)
+        : [...prev.siteType, value];
+      return { ...prev, siteType: arr };
+    });
+  }
+  function onPaymentToggle(value: string) {
+    setFormData(prev => {
+      const arr = prev.paymentMethods.includes(value)
+        ? prev.paymentMethods.filter(v => v !== value)
+        : [...prev.paymentMethods, value];
+      return { ...prev, paymentMethods: arr };
+    });
+  }
+  function onDigitalToggle(value: string) {
+    setFormData(prev => {
+      if (value === "Aucun") return { ...prev, digitalPresence: prev.digitalPresence.includes("Aucun") ? [] : ["Aucun"] };
+      const base = prev.digitalPresence.filter((x) => x !== "Aucun");
+      return { ...prev, digitalPresence: base.includes(value) ? base.filter((x) => x !== value) : [...base, value] };
+    });
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Créer le message WhatsApp
-    const message = `🚀 NOUVEAU PROJET - 2AB HOLDING
-
-📋 ENTREPRISE
-━━━━━━━━━━━━━━━
-• Nom: ${formData.companyName}
-• Slogan: ${formData.slogan || 'Non fourni'}
-• Activité: ${formData.activity}
-• Année: ${formData.yearCreated}
-• Localisation: ${formData.location}
-• Téléphone: ${formData.phone}
-• Email: ${formData.email}
-• WhatsApp: ${formData.whatsapp}
-
-🎯 OBJECTIFS
-━━━━━━━━━━━━━━━
-• Objectifs: ${formData.objective.join(', ')}
-• Objectif principal: ${formData.mainGoal}
-• Type de site: ${formData.siteType.join(', ')}
-${formData.productsCount ? `• Nombre de produits: ${formData.productsCount}` : ''}
-${formData.paymentMethods.length > 0 ? `• Paiements: ${formData.paymentMethods.join(', ')}` : ''}
-
-🎨 DESIGN & BUDGET
-━━━━━━━━━━━━━━━
-• Logo: ${formData.hasLogo}
-• Couleurs: ${formData.preferredColors}
-• Style: ${formData.style}
-• Sites inspiration: ${formData.inspirationSites || 'Non fourni'}
-• Budget: ${formData.budget}
-• Délai: ${formData.deadline}
-
-💎 CRITÈRE DE SUCCÈS
-━━━━━━━━━━━━━━━
-${formData.successCriteria}`;
-
-    const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/221762641751?text=${encodedMessage}`, '_blank');
-  };
-
-  const nextStep = () => {
-    if (step < 3) setStep(step + 1);
-  };
-
-  const prevStep = () => {
-    if (step > 1) setStep(step - 1);
-  };
-
-  const motivationalMessages = [
-    {
-      icon: Sparkles,
-      title: "Excellent début ! 🎯",
-      message: "Tu sais bien ce que tu veux et tu es à deux doigts de passer dans la cour des grands",
-      color: "from-blue-600 to-cyan-500"
-    },
-    {
-      icon: Zap,
-      title: "Impressionnant ! ⚡",
-      message: "Ton projet prend forme. Plus qu'une étape pour concrétiser ta vision digitale",
-      color: "from-purple-600 to-pink-500"
-    },
-    {
-      icon: Trophy,
-      title: "C'est le moment ! 🏆",
-      message: "Tu es prêt à transformer ton business. Finalisons ensemble ce projet ambitieux",
-      color: "from-green-600 to-emerald-500"
+  // Validation par étape
+  function validateStep(s: Step): string[] {
+    const e: string[] = [];
+    if (s === 1) {
+      if (!formData.fullName.trim()) e.push("Nom complet requis");
+      if (!formData.companyName.trim()) e.push("Entreprise requise");
+      if (!formData.whatsapp.trim()) e.push("WhatsApp requis");
+      if (!formData.cityCountry.trim()) e.push("Ville/Pays requis");
+      if (!formData.sector.trim()) e.push("Secteur requis");
     }
-  ];
+    if (s === 2) {
+      if (!formData.businessAge) e.push("Ancienneté requise");
+      if (formData.digitalPresence.length === 0) e.push("Présence digitale requise");
+      if (!formData.monthlyClients.trim()) e.push("Clients/mois requis");
+      if (!formData.advertisingNow) e.push("Réponse publicité requise");
+    }
+    if (s === 3) {
+      if (formData.objective.length === 0) e.push("Objectifs requis");
+      if (formData.siteType.length === 0) e.push("Type de site requis");
+      if (formData.siteType.includes("E-commerce") && !formData.productsCount.trim()) e.push("Nombre de produits requis pour e-commerce");
+      if (formData.siteType.includes("E-commerce") && formData.paymentMethods.length === 0) e.push("Méthodes de paiement requises pour e-commerce");
+      if (!formData.biggestProblem.trim()) e.push("Problème principal requis");
+      if (!formData.sixMonthsVision.trim()) e.push("Vision à 6 mois requise");
+    }
+    if (s === 4) {
+      if (!formData.hasLogo) e.push("Logo requis");
+      if (!formData.style) e.push("Style requis");
+      if (!formData.budgetRange) e.push("Budget requis");
+      if (!formData.adInvestmentReady) e.push("Niveau d'engagement pub requis");
+      if (!formData.startWhen) e.push("Délai de démarrage requis");
+    }
+    if (s === 5) {
+      if (!formData.projectDetails.trim()) e.push("Projet détaillé requis");
+      if (!formData.competitors.trim()) e.push("Concurrents requis");
+      if (!formData.differentiation.trim()) e.push("Différenciation requise");
+      if (!formData.successCriteria.trim()) e.push("Critère de succès requis");
+    }
+    return e;
+  }
+  // Score sérieux
+  function seriousnessScore() {
+    let score = 0;
+    if (formData.budgetRange === "150 000 – 500 000 FCFA") score += 2;
+    if (formData.budgetRange === "500 000 FCFA +") score += 3;
+    if (formData.adInvestmentReady === "Oui") score += 2;
+    if (formData.adInvestmentReady === "À discuter") score += 1;
+    if (formData.startWhen === "Immédiatement") score += 2;
+    if (formData.startWhen === "Ce mois-ci") score += 1;
+    if (formData.projectDetails.trim().length >= 80) score += 1;
+    return score;
+  }
+  function seriousnessLabel(score: number) {
+    if (score >= 7) return "Très sérieux";
+    if (score >= 4) return "Moyen";
+    return "À qualifier";
+  }
+  // Navigation étapes
+  function goNext() {
+    const stepErrors = validateStep(step);
+    setErrors(stepErrors);
+    if (stepErrors.length > 0 || step === TOTAL_STEPS) return;
+    setStep((step + 1) as Step);
+  }
+  function goPrev() {
+    setErrors([]);
+    if (step === 1) return;
+    setStep((step - 1) as Step);
+  }
 
-  const renderStep1 = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h3 className="text-3xl font-black text-white mb-2">Parlons de votre entreprise</h3>
-        <p className="text-gray-400">Commençons par les bases</p>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-white font-semibold mb-2">Nom de l&apos;entreprise *</label>
-          <input
-            type="text"
-            name="companyName"
-            value={formData.companyName}
-            onChange={handleChange}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
-            placeholder="Ma Super Entreprise"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-white font-semibold mb-2">Slogan</label>
-          <input
-            type="text"
-            name="slogan"
-            value={formData.slogan}
-            onChange={handleChange}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
-            placeholder="Votre phrase d'accroche"
-          />
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-white font-semibold mb-2">Description de l&apos;activité *</label>
-          <textarea
-            name="activity"
-            value={formData.activity}
-            onChange={handleChange}
-            rows={3}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
-            placeholder="Que fait votre entreprise ?"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-white font-semibold mb-2">Année de création</label>
-          <input
-            type="text"
-            name="yearCreated"
-            value={formData.yearCreated}
-            onChange={handleChange}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
-            placeholder="2020"
-          />
-        </div>
-
-        <div>
-          <label className="block text-white font-semibold mb-2">Localisation *</label>
-          <input
-            type="text"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
-            placeholder="Dakar, Sénégal"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-white font-semibold mb-2">Téléphone *</label>
-          <input
-            type="tel"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
-            placeholder="+221 77 123 45 67"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-white font-semibold mb-2">Email professionnel *</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
-            placeholder="contact@entreprise.com"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-white font-semibold mb-2">WhatsApp</label>
-          <input
-            type="tel"
-            name="whatsapp"
-            value={formData.whatsapp}
-            onChange={handleChange}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
-            placeholder="+221 77 123 45 67"
-          />
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderStep2 = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h3 className="text-3xl font-black text-white mb-2">Détails du projet</h3>
-        <p className="text-gray-400">Aidez-nous à comprendre votre vision</p>
-      </div>
-
-      <div className="space-y-6">
-        <div>
-          <label className="block text-white font-semibold mb-3">Pourquoi voulez-vous un site web ? *</label>
-          <div className="grid md:grid-cols-2 gap-3">
-            {['Présence en ligne', 'Vendre en ligne', 'Générer des leads', 'Montrer portfolio', 'Réservation en ligne', 'Autre'].map(obj => (
-              <label key={obj} className="flex items-center gap-3 px-4 py-3 bg-white/10 border border-white/20 rounded-lg cursor-pointer hover:border-cyan-400 transition-colors">
-                <input
-                  type="checkbox"
-                  checked={formData.objective.includes(obj)}
-                  onChange={() => handleCheckboxChange('objective', obj)}
-                  className="w-5 h-5"
-                />
-                <span className="text-white">{obj}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-white font-semibold mb-2">Quel est votre objectif principal ? *</label>
-          <select
-            name="mainGoal"
-            value={formData.mainGoal}
-            onChange={handleChange}
-            className="w-full px-4 py-3 bg-gray-900/90 border border-white/20 rounded-lg text-white focus:border-cyan-400 focus:outline-none [&>option]:bg-gray-900 [&>option]:text-white"
-            required
+  return (
+    <section className={`${embedded ? "py-0 bg-transparent" : "py-24 bg-linear-to-br from-gray-900 to-black"} relative`} id="contact-form">
+      <div className={`${embedded ? "" : "container mx-auto px-6"}`}>
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-6 text-sm text-cyan-300">Progression: {Math.round((step / TOTAL_STEPS) * 100)}%</div>
+          <div className="mb-8 flex justify-between text-sm text-gray-400">{sectionLabels.map((label, i) => <span key={label} className={i + 1 <= step ? "text-white" : ""}>{label}</span>)}</div>
+          {restored && <div className="mb-4 p-3 rounded-lg bg-cyan-900/30 border border-cyan-600/30 text-cyan-200">Brouillon restauré automatiquement. Expiration du brouillon: 24h.</div>}
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              // Validation toutes étapes
+              const allErrors = ([1,2,3,4,5] as Step[]).flatMap(s => validateStep(s));
+              if (allErrors.length > 0) {
+                setErrors(validateStep(step));
+                return;
+              }
+              // Score sérieux
+              const score = seriousnessScore();
+              const seriousness = seriousnessLabel(score);
+              // Message WhatsApp ASCII
+              const message = buildAsciiMessage(formData, score, seriousness);
+              window.open(`https://wa.me/221762641751?text=${encodeURIComponent(message)}`, "_blank");
+              setIsSubmitted(true);
+              window.localStorage.removeItem(STORAGE_KEY);
+              setErrors([]);
+            }}
+            className="bg-linear-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-10 space-y-6"
           >
-            <option value="" className="bg-gray-900 text-gray-400">Sélectionnez...</option>
-            <option value="Plus de ventes" className="bg-gray-900 text-white">Plus de ventes</option>
-            <option value="Plus de clients" className="bg-gray-900 text-white">Plus de clients</option>
-            <option value="Image professionnelle" className="bg-gray-900 text-white">Image professionnelle</option>
-            <option value="Automatisation" className="bg-gray-900 text-white">Automatisation</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-white font-semibold mb-3">Type de site souhaité *</label>
-          <div className="grid md:grid-cols-2 gap-3">
-            {['Site vitrine', 'E-commerce', 'Blog', 'Application web', 'Application Android', 'Landing page'].map(type => (
-              <label key={type} className="flex items-center gap-3 px-4 py-3 bg-white/10 border border-white/20 rounded-lg cursor-pointer hover:border-cyan-400 transition-colors">
-                <input
-                  type="checkbox"
-                  checked={formData.siteType.includes(type)}
-                  onChange={() => handleCheckboxChange('siteType', type)}
-                  className="w-5 h-5"
-                />
-                <span className="text-white">{type}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {formData.siteType.includes('E-commerce') && (
-          <>
-            <div>
-              <label className="block text-white font-semibold mb-2">Combien de produits ?</label>
-              <input
-                type="text"
-                name="productsCount"
-                value={formData.productsCount}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
-                placeholder="Ex: 50-100 produits"
-              />
-            </div>
-
-            <div>
-              <label className="block text-white font-semibold mb-3">Méthodes de paiement souhaitées</label>
+            {/* SECTION 1 */}
+            {step === 1 && <>
+              <h3 className="text-base font-semibold text-cyan-200 mb-2">Informations générales</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="fullName" className="text-xs text-cyan-100/80 pl-1">Nom complet *</label>
+                  <input id="fullName" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="fullName" value={formData.fullName} onChange={onChange} placeholder="Ex : Mohamed Bathily" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="companyName" className="text-xs text-cyan-100/80 pl-1">Nom de l'entreprise *</label>
+                  <input id="companyName" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="companyName" value={formData.companyName} onChange={onChange} placeholder="Ex : Autoboss" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="slogan" className="text-xs text-cyan-100/80 pl-1">Slogan (optionnel)</label>
+                  <input id="slogan" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="slogan" value={formData.slogan} onChange={onChange} placeholder="Ex : Votre mobilité, notre passion" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="whatsapp" className="text-xs text-cyan-100/80 pl-1">Numéro WhatsApp *</label>
+                  <input id="whatsapp" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="whatsapp" value={formData.whatsapp} onChange={onChange} placeholder="Ex : 771234567" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="phone" className="text-xs text-cyan-100/80 pl-1">Téléphone *</label>
+                  <input id="phone" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="phone" value={formData.phone} onChange={onChange} placeholder="Ex : 771234567" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="email" className="text-xs text-cyan-100/80 pl-1">Email *</label>
+                  <input id="email" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="email" value={formData.email} onChange={onChange} placeholder="Ex : contact@autoboss.com" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="cityCountry" className="text-xs text-cyan-100/80 pl-1">Ville, Pays *</label>
+                  <input id="cityCountry" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="cityCountry" value={formData.cityCountry} onChange={onChange} placeholder="Ex : Dakar, Sénégal" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="sector" className="text-xs text-cyan-100/80 pl-1">Secteur d'activité *</label>
+                  <input id="sector" className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="sector" value={formData.sector} onChange={onChange} placeholder="Ex : Automobile, Immobilier, Restauration..." />
+                </div>
+              </div>
+            </>}
+            {/* SECTION 2 */}
+            {step === 2 && <>
+              <h3 className="text-base font-semibold text-cyan-200 mb-2">Situation digitale</h3>
+              <select className="w-full px-4 py-3 bg-gray-900/90 border border-white/20 rounded-lg text-white focus:border-cyan-400 focus:outline-none" name="businessAge" value={formData.businessAge} onChange={onChange}>
+                <option value="">Depuis combien de temps votre business existe ? *</option>
+                <option value="Moins de 6 mois">Moins de 6 mois</option>
+                <option value="6 mois – 1 an">6 mois – 1 an</option>
+                <option value="1 – 3 ans">1 – 3 ans</option>
+                <option value="3 ans +">3 ans +</option>
+              </select>
               <div className="grid md:grid-cols-2 gap-3">
-                {['Wave', 'Orange Money', 'Carte bancaire', 'Paiement à la livraison'].map(method => (
-                  <label key={method} className="flex items-center gap-3 px-4 py-3 bg-white/10 border border-white/20 rounded-lg cursor-pointer hover:border-cyan-400 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={formData.paymentMethods.includes(method)}
-                      onChange={() => handleCheckboxChange('paymentMethods', method)}
-                      className="w-5 h-5"
-                    />
-                    <span className="text-white">{method}</span>
+                {digitalOptions.map((item) => (
+                  <label key={item} className="flex items-center gap-3 px-4 py-3 bg-white/10 border border-white/20 rounded-lg cursor-pointer hover:border-cyan-400">
+                    <input type="checkbox" checked={formData.digitalPresence.includes(item)} onChange={() => onDigitalToggle(item)} className="w-5 h-5" />
+                    <span className="text-white">{item}</span>
                   </label>
                 ))}
               </div>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-
-  const renderStep3 = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h3 className="text-3xl font-black text-white mb-2">Design & Budget</h3>
-        <p className="text-gray-400">Dernière étape avant le grand saut</p>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-white font-semibold mb-2">Avez-vous un logo ? *</label>
-          <select
-            name="hasLogo"
-            value={formData.hasLogo}
-            onChange={handleChange}
-            className="w-full px-4 py-3 bg-gray-900/90 border border-white/20 rounded-lg text-white focus:border-cyan-400 focus:outline-none [&>option]:bg-gray-900 [&>option]:text-white"
-            required
-          >
-            <option value="" className="bg-gray-900 text-gray-400">Sélectionnez...</option>
-            <option value="Oui, j'ai un logo" className="bg-gray-900 text-white">Oui, j&apos;ai un logo</option>
-            <option value="Non, besoin d'un logo" className="bg-gray-900 text-white">Non, besoin d&apos;un logo</option>
-            <option value="En cours de création" className="bg-gray-900 text-white">En cours de création</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-white font-semibold mb-2">Couleurs préférées</label>
-          <input
-            type="text"
-            name="preferredColors"
-            value={formData.preferredColors}
-            onChange={handleChange}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
-            placeholder="Ex: Bleu et blanc"
-          />
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-white font-semibold mb-2">Sites que vous aimez (liens)</label>
-          <textarea
-            name="inspirationSites"
-            value={formData.inspirationSites}
-            onChange={handleChange}
-            rows={2}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
-            placeholder="https://exemple1.com, https://exemple2.com"
-          />
-        </div>
-
-        <div>
-          <label className="block text-white font-semibold mb-2">Style souhaité *</label>
-          <select
-            name="style"
-            value={formData.style}
-            onChange={handleChange}
-            className="w-full px-4 py-3 bg-gray-900/90 border border-white/20 rounded-lg text-white focus:border-cyan-400 focus:outline-none [&>option]:bg-gray-900 [&>option]:text-white"
-            required
-          >
-            <option value="" className="bg-gray-900 text-gray-400">Sélectionnez...</option>
-            <option value="Moderne" className="bg-gray-900 text-white">Moderne</option>
-            <option value="Minimaliste" className="bg-gray-900 text-white">Minimaliste</option>
-            <option value="Luxe" className="bg-gray-900 text-white">Luxe</option>
-            <option value="Corporate" className="bg-gray-900 text-white">Corporate</option>
-            <option value="Dynamique" className="bg-gray-900 text-white">Dynamique</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-white font-semibold mb-2">Budget estimé *</label>
-          <select
-            name="budget"
-            value={formData.budget}
-            onChange={handleChange}
-            className="w-full px-4 py-3 bg-gray-900/90 border border-white/20 rounded-lg text-white focus:border-cyan-400 focus:outline-none [&>option]:bg-gray-900 [&>option]:text-white"
-            required
-          >
-            <option value="" className="bg-gray-900 text-gray-400">Sélectionnez...</option>
-            <option value="50k – 100k FCFA" className="bg-gray-900 text-white">50k – 100k FCFA</option>
-            <option value="100k – 300k FCFA" className="bg-gray-900 text-white">100k – 300k FCFA</option>
-            <option value="300k+ FCFA" className="bg-gray-900 text-white">300k+ FCFA</option>
-            <option value="À discuter" className="bg-gray-900 text-white">À discuter</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-white font-semibold mb-2">Date souhaitée de livraison</label>
-          <input
-            type="text"
-            name="deadline"
-            value={formData.deadline}
-            onChange={handleChange}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
-            placeholder="Ex: Dans 1 mois"
-          />
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-white font-semibold mb-2">👉 Qu&apos;est-ce qui vous ferait dire que ce projet est un succès ? *</label>
-          <textarea
-            name="successCriteria"
-            value={formData.successCriteria}
-            onChange={handleChange}
-            rows={3}
-            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none"
-            placeholder="Décrivez votre vision du succès..."
-            required
-          />
-        </div>
-      </div>
-    </div>
-  );
-
-  const currentMotivation = step > 1 ? motivationalMessages[step - 2] : null;
-
-  return (
-    <section className={`${embedded ? "py-0 bg-transparent" : "py-32 bg-linear-to-br from-gray-900 to-black"} relative overflow-hidden`} id="contact-form">
-      {/* Background grid */}
-      {!embedded && (
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-size-[64px_64px]"></div>
-      )}
-      
-      <div className={`${embedded ? "relative z-10" : "container mx-auto px-6 relative z-10"}`}>
-        <div className="max-w-4xl mx-auto">
-          
-          {/* Header */}
-          {!embedded && (
-            <div className="text-center mb-16">
-              <h2 className="text-5xl md:text-7xl font-black text-white mb-6">
-                Lancez votre{" "}
-                <span className="bg-linear-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                  Projet
-                </span>
-              </h2>
-              <p className="text-xl text-gray-400">
-                3 étapes rapides pour concrétiser votre vision digitale
-              </p>
-            </div>
-          )}
-
-          {/* Progress Bar */}
-          <div className="mb-12">
-            <div className="flex items-center justify-between mb-4">
-              {[1, 2, 3].map((num) => (
-                <div key={num} className="flex items-center">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${
-                    step >= num 
-                      ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white' 
-                      : 'bg-white/10 text-gray-400'
-                  }`}>
-                    {step > num ? <CheckCircle className="w-6 h-6" /> : num}
-                  </div>
-                  {num < 3 && (
-                    <div className={`w-24 md:w-32 h-1 mx-2 ${
-                      step > num ? 'bg-linear-to-r from-blue-600 to-cyan-500' : 'bg-white/10'
-                    }`} />
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-between text-sm text-gray-400">
-              <span>Entreprise</span>
-              <span>Projet</span>
-              <span>Design</span>
-            </div>
-          </div>
-
-          {/* Motivational Banner */}
-          {currentMotivation && (
-            <div className={`mb-8 p-6 bg-linear-to-r ${currentMotivation.color} rounded-2xl text-white text-center`}>
-              <div className="flex items-center justify-center gap-3 mb-3">
-                <currentMotivation.icon className="w-8 h-8" />
-                <h4 className="text-2xl font-black">{currentMotivation.title}</h4>
+              <input className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="monthlyClients" value={formData.monthlyClients} onChange={onChange} placeholder="Ex : 50 clients" />
+              <select className="w-full px-4 py-3 bg-gray-900/90 border border-white/20 rounded-lg text-white focus:border-cyan-400 focus:outline-none" name="advertisingNow" value={formData.advertisingNow} onChange={onChange}>
+                <option value="">Faites-vous actuellement de la publicité ? *</option>
+                <option value="Oui">Oui</option>
+                <option value="Non">Non</option>
+              </select>
+            </>}
+            {/* SECTION 3 */}
+            {step === 3 && <>
+              <h3 className="text-base font-semibold text-cyan-200 mb-2">Objectifs & projet</h3>
+              <div className="mb-2 text-xs text-cyan-100/80">Sélectionnez un ou plusieurs objectifs pour votre projet (ex : visibilité, automatisation, ventes...)</div>
+              <div className="grid md:grid-cols-2 gap-3">
+                {objectiveOptions.map((item) => (
+                  <label key={item} className="flex items-center gap-3 px-4 py-3 bg-white/10 border border-white/20 rounded-lg cursor-pointer hover:border-cyan-400">
+                    <input type="checkbox" checked={formData.objective.includes(item)} onChange={() => onObjectiveToggle(item)} className="w-5 h-5" />
+                    <span className="text-white">{item}</span>
+                  </label>
+                ))}
               </div>
-              <p className="text-lg">{currentMotivation.message}</p>
-            </div>
-          )}
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="bg-linear-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-12">
-            {step === 1 && renderStep1()}
-            {step === 2 && renderStep2()}
-            {step === 3 && renderStep3()}
-
-            {/* Navigation Buttons */}
-            <div className="flex items-center justify-between mt-12 pt-8 border-t border-white/10">
-              {step > 1 && (
-                <button
-                  type="button"
-                  onClick={prevStep}
-                  className="flex items-center gap-2 px-6 py-3 bg-white/10 text-white rounded-full font-semibold hover:bg-white/20 transition-all"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  Retour
+              <div className="text-xs text-gray-400 mb-2">Vous pouvez cocher plusieurs objectifs.</div>
+              <div className="grid md:grid-cols-2 gap-3">
+                {siteTypeOptions.map((item) => (
+                  <label key={item} className="flex items-center gap-3 px-4 py-3 bg-white/10 border border-white/20 rounded-lg cursor-pointer hover:border-cyan-400">
+                    <input type="checkbox" checked={formData.siteType.includes(item)} onChange={() => onSiteTypeToggle(item)} className="w-5 h-5" />
+                    <span className="text-white">{item}</span>
+                  </label>
+                ))}
+              </div>
+              {formData.siteType.includes("E-commerce") && <>
+                <input className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="productsCount" value={formData.productsCount} onChange={onChange} placeholder="Ex : 50 produits" />
+                <div className="grid md:grid-cols-2 gap-3">
+                  {paymentOptions.map((item) => (
+                    <label key={item} className="flex items-center gap-3 px-4 py-3 bg-white/10 border border-white/20 rounded-lg cursor-pointer hover:border-cyan-400">
+                      <input type="checkbox" checked={formData.paymentMethods.includes(item)} onChange={() => onPaymentToggle(item)} className="w-5 h-5" />
+                      <span className="text-white">{item}</span>
+                    </label>
+                  ))}
+                </div>
+              </>}
+              <textarea className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="biggestProblem" value={formData.biggestProblem} onChange={onChange} rows={3} placeholder="Ex : manque de visibilité, peu de clients..." />
+              <textarea className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="sixMonthsVision" value={formData.sixMonthsVision} onChange={onChange} rows={3} placeholder="Ex : doubler mon chiffre d'affaires, lancer un nouveau service..." />
+            </>}
+            {/* SECTION 4 */}
+            {step === 4 && <>
+              <h3 className="text-base font-semibold text-cyan-200 mb-2">Design & budget</h3>
+              <select className="w-full px-4 py-3 bg-gray-900/90 border border-white/20 rounded-lg text-white focus:border-cyan-400 focus:outline-none" name="hasLogo" value={formData.hasLogo} onChange={onChange}>
+                <option value="">Avez-vous un logo ? *</option>
+                <option value="Oui, j'ai un logo">Oui, j'ai un logo</option>
+                <option value="Non, besoin d'un logo">Non, besoin d'un logo</option>
+                <option value="En cours de création">En cours de création</option>
+              </select>
+              <input className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="preferredColors" value={formData.preferredColors} onChange={onChange} placeholder="Ex : bleu, blanc, rouge..." />
+              <input className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="inspirationSites" value={formData.inspirationSites} onChange={onChange} placeholder="Ex : https://exemple.com, https://autre.com" />
+              <select className="w-full px-4 py-3 bg-gray-900/90 border border-white/20 rounded-lg text-white focus:border-cyan-400 focus:outline-none" name="style" value={formData.style} onChange={onChange}>
+                <option value="">Style souhaité *</option>
+                {styleOptions.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+              <select className="w-full px-4 py-3 bg-gray-900/90 border border-white/20 rounded-lg text-white focus:border-cyan-400 focus:outline-none" name="budgetRange" value={formData.budgetRange} onChange={onChange}>
+                <option value="">Budget estimé *</option>
+                {budgetOptions.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+              <select className="w-full px-4 py-3 bg-gray-900/90 border border-white/20 rounded-lg text-white focus:border-cyan-400 focus:outline-none" name="adInvestmentReady" value={formData.adInvestmentReady} onChange={onChange}>
+                <option value="">Prêt à investir dans la publicité ? *</option>
+                <option value="Oui">Oui</option>
+                <option value="Non">Non</option>
+                <option value="À discuter">À discuter</option>
+              </select>
+              <select className="w-full px-4 py-3 bg-gray-900/90 border border-white/20 rounded-lg text-white focus:border-cyan-400 focus:outline-none" name="startWhen" value={formData.startWhen} onChange={onChange}>
+                <option value="">Quand souhaitez-vous commencer ? *</option>
+                <option value="Immédiatement">Immédiatement</option>
+                <option value="Ce mois-ci">Ce mois-ci</option>
+                <option value="Plus tard">Plus tard</option>
+              </select>
+              <input className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="deadline" value={formData.deadline} onChange={onChange} placeholder="Ex : dans 2 mois, dès que possible..." />
+            </>}
+            {/* SECTION 5 */}
+            {step === 5 && <>
+              <h3 className="text-base font-semibold text-cyan-200 mb-2">Questions spécifiques</h3>
+              <textarea className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="projectDetails" value={formData.projectDetails} onChange={onChange} rows={4} placeholder="Ex : je vends des voitures importées, je veux un site simple avec catalogue, contact WhatsApp..." />
+              <textarea className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="competitors" value={formData.competitors} onChange={onChange} rows={3} placeholder="Ex : DakarAuto, SenAuto, etc." />
+              <textarea className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="differentiation" value={formData.differentiation} onChange={onChange} rows={3} placeholder="Ex : livraison rapide, SAV, prix bas, etc." />
+              <textarea className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none" name="successCriteria" value={formData.successCriteria} onChange={onChange} rows={3} placeholder="Ex : 100 ventes/mois, 50 demandes de contact, etc." />
+            </>}
+            {errors.length > 0 && <div className="rounded-lg border border-red-500/40 bg-red-900/20 p-4 text-red-200">{errors.map((e) => <div key={e}>• {e}</div>)}</div>}
+            <div className="flex items-center justify-between pt-4 border-t border-white/10">
+              {step > 1 ? (
+                <button type="button" onClick={goPrev} className="flex items-center gap-2 px-5 py-3 bg-white/10 text-white rounded-full hover:bg-white/20">
+                  <ArrowLeft className="w-4 h-4" /> Retour
                 </button>
-              )}
-
-              {step < 3 ? (
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="ml-auto flex items-center gap-2 px-8 py-4 bg-linear-to-r from-blue-600 to-cyan-500 text-white rounded-full font-bold text-lg shadow-2xl hover:shadow-cyan-500/50 transform hover:scale-105 transition-all"
-                >
-                  Continuer
-                  <ArrowRight className="w-6 h-6" />
+              ) : <div />}
+              {step < TOTAL_STEPS ? (
+                <button type="button" onClick={goNext} className="ml-auto flex items-center gap-2 px-7 py-3 bg-linear-to-r from-blue-600 to-cyan-500 text-white rounded-full font-bold hover:shadow-cyan-500/40">
+                  Continuer <ArrowRight className="w-4 h-4" />
                 </button>
               ) : (
-                <button
-                  type="submit"
-                  className="ml-auto flex items-center gap-2 px-10 py-5 bg-linear-to-r from-green-600 to-emerald-500 text-white rounded-full font-black text-xl shadow-2xl hover:shadow-green-500/50 transform hover:scale-105 transition-all"
-                >
-                  <Trophy className="w-7 h-7" />
-                  Envoyer mon projet
-                  <ArrowRight className="w-7 h-7" />
+                <button type="submit" className="ml-auto flex items-center gap-2 px-8 py-4 bg-linear-to-r from-green-600 to-emerald-500 text-white rounded-full font-bold hover:shadow-green-500/40">
+                  <CheckCircle className="w-5 h-5" /> Envoyer mon projet
                 </button>
               )}
             </div>
           </form>
+          <div className="mt-4 flex items-center justify-between text-sm text-gray-400">
+            <span>Le formulaire reste intact si l&apos;utilisateur revient avant expiration (24h).</span>
+            {isDirty && !isSubmitted && (
+              <button type="button" onClick={() => { setFormData(initialData); setStep(1); setErrors([]); setRestored(false); window.localStorage.removeItem(STORAGE_KEY); }} className="text-cyan-300 hover:text-cyan-200">
+                Réinitialiser
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </section>
